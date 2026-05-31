@@ -7,6 +7,8 @@ RATE_LIMIT_MAX_REQUESTS = 10
 RATE_LIMIT_WINDOW_SECONDS = 20
 RATE_LIMIT_KEY_PREFIX = "rate_limit:"
 
+#Payload config
+MAXIMUM_PAYLOAD_SIZE = 1000
 # Redis queue
 QUEUE_HIGH = "queue:high"
 QUEUE_NORMAL = "queue:normal"
