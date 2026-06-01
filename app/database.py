@@ -4,10 +4,12 @@ import os
 from typing import Optional
 from dotenv import load_dotenv
 from redis import asyncio as airedis
+from app.logging_config import setup_logging
 
+setup_logging()
 # Load environment variables
 load_dotenv()
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("my_app")
 
 # Module level SINGLETON POOL for DB connection
 _pool: Optional[asyncpg.Pool] = None
