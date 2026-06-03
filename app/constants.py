@@ -27,12 +27,18 @@ class TaskStatus(str,Enum):
   IN_PROGRESS = "in_progress"
   FAILED = "failed"
 
-# Task Priority 
+# Task Priority   
 class PriorityLevel(int,Enum):
   LOW = 1
   MEDIUM = 2
   HIGH = 3
 
+
+QUEUE_MAP = {
+    PriorityLevel.LOW: QUEUE_LOW,
+    PriorityLevel.MEDIUM: QUEUE_NORMAL,
+    PriorityLevel.HIGH: QUEUE_HIGH,
+}
 # Cpp service url
 
 CPP_SERVICE_URL = "http://localhost:8080"

@@ -1,6 +1,8 @@
 import os
-from logging.config import dictConfig
+
 from dotenv import load_dotenv
+
+from logging.config import dictConfig
 
 load_dotenv()
 

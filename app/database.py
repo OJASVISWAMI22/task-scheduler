@@ -1,9 +1,11 @@
-import asyncpg
 import logging
 import os
 from typing import Optional
+
+import asyncpg
 from dotenv import load_dotenv
 from redis import asyncio as airedis
+
 from app.logging_config import setup_logging
 
 setup_logging()

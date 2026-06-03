@@ -1,8 +1,9 @@
 from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse, Response
+
+from app.constants import RATE_LIMIT_MAX_REQUESTS, RATE_LIMIT_WINDOW_SECONDS
 from app.database import get_redis_pool
-from app.constants import RATE_LIMIT_WINDOW_SECONDS,RATE_LIMIT_MAX_REQUESTS
 class RateLimitMiddleware(BaseHTTPMiddleware):
 
   """"
