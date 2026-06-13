@@ -34,7 +34,7 @@ class Processor{
   // To be initialized form main.cpp from .env
   Processor(unsigned char key[32], unsigned char iv[16]);
   // Routes to respective method based on user request 
-  ProcessResult process_request(std::string operation, std:: string payload_string);
+  ProcessResult process_request(std::string operation_name, std:: string payload_string);
 };
 
 #endif
