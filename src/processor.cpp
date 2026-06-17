@@ -2,6 +2,8 @@
 #include <openssl/evp.h>
 #include<cstring>
 #include<unordered_map>
+#include<vector>
+#include<memory>
 #include "processor.h"
 
 
@@ -114,3 +116,46 @@ ProcessResult Processor::encrypt(const std::string& input_string){
 }
 
 
+bool compute_sha256(const std::string& input, unsigned char* hash_buffer) {
+
+    struct EVP_MD_CTX_Deleter
+    {
+        void operator()(EVP_MD_CTX *ctx) { EVP_MD_CTX_free(ctx); }
+    };
+    using EVP_MD_CTX_ptr = std::unique_ptr<EVP_MD_CTX, EVP_MD_CTX_Deleter>;
+    EVP_MD_CTX_ptr context(EVP_MD_CTX_new());
+
+    if (!context) return false;
+
+    if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1) return false;
+    if (EVP_DigestUpdate(context.get(), input.c_str(), input.length()) != 1) return false;
+
+    unsigned int internal_len = 0;
+    if (EVP_DigestFinal_ex(context.get(), hash_buffer, &internal_len) != 1) return false;
+
+    return true;
+}
+
+
+std::string base64_encode(const unsigned char* buffer, size_t length) {
+    size_t expected_length = ((length + 2) / 3) * 4;
+    std::vector<char> encoded_buffer(expected_length + 1);
+    int final_length = EVP_EncodeBlock(reinterpret_cast<unsigned char*>(encoded_buffer.data()), buffer, length);
+    return std::string(encoded_buffer.data(), final_length);
+}
+
+ProcessResult Processor::hash(const std::string& input_string) {
+    ProcessResult result;
+    result.processing_ms = 0;
+
+    unsigned char digest[32];
+    if (!compute_sha256(input_string, digest)) {
+        result.success = false;
+        result.error_message = "Hash failed";
+        return result;
+    }
+
+    result.output = base64_encode(digest, 32);
+    result.success = true;
+    return result;
+}
