@@ -6,18 +6,21 @@
 #include<memory>
 #include "processor.h"
 
-
+// Mapping of operation name to int for switch case
 const std::unordered_map <std::string, int> mapping = {
   {"ENCRYPT", 1},
   {"HASH", 2},
   {"TRANSFORM", 3}
 };
 
+// Constructor => Copies key and iv 
 Processor::Processor(unsigned char key[32], unsigned char iv[16]){
     memcpy(this->key,key,32);
     memcpy(this->iv,iv,16);
 }
 
+// Dispatches to encrypt/hash/transform based on operation_name
+// Also calculates time taken for operation
 ProcessResult Processor::process_request(std::string operation_name,std::string payload_string){
     //  variable to track processing time
     auto start_time = std::chrono::high_resolution_clock::now();
@@ -57,7 +60,9 @@ ProcessResult Processor::process_request(std::string operation_name,std::string 
     return result;
 }
 
-
+/* AES-256 CBC encryption method
+Uses RAII via unique_pointer 
+*/ 
 ProcessResult Processor::encrypt(const std::string& input_string){
     ProcessResult result;
     result.processing_ms = 0;
@@ -115,47 +120,82 @@ ProcessResult Processor::encrypt(const std::string& input_string){
     return result;
 }
 
-
-bool compute_sha256(const std::string& input, unsigned char* hash_buffer) {
-
-    struct EVP_MD_CTX_Deleter
-    {
-        void operator()(EVP_MD_CTX *ctx) { EVP_MD_CTX_free(ctx); }
-    };
-    using EVP_MD_CTX_ptr = std::unique_ptr<EVP_MD_CTX, EVP_MD_CTX_Deleter>;
-    EVP_MD_CTX_ptr context(EVP_MD_CTX_new());
-
-    if (!context) return false;
-
-    if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1) return false;
-    if (EVP_DigestUpdate(context.get(), input.c_str(), input.length()) != 1) return false;
-
-    unsigned int internal_len = 0;
-    if (EVP_DigestFinal_ex(context.get(), hash_buffer, &internal_len) != 1) return false;
-
-    return true;
-}
-
-
-std::string base64_encode(const unsigned char* buffer, size_t length) {
+// Encodes raw bytes to Base64 string 
+std::string Processor::base64_encode(const unsigned char* buffer, size_t length) {
     size_t expected_length = ((length + 2) / 3) * 4;
     std::vector<char> encoded_buffer(expected_length + 1);
     int final_length = EVP_EncodeBlock(reinterpret_cast<unsigned char*>(encoded_buffer.data()), buffer, length);
     return std::string(encoded_buffer.data(), final_length);
 }
 
+// SHA-256 hashing 
 ProcessResult Processor::hash(const std::string& input_string) {
+
     ProcessResult result;
     result.processing_ms = 0;
 
-    unsigned char digest[32];
-    if (!compute_sha256(input_string, digest)) {
+    struct EVP_MD_CTX_Deleter {
+        void operator()(EVP_MD_CTX* ctx) { EVP_MD_CTX_free(ctx); }
+    };
+    using EVP_MD_CTX_ptr = std::unique_ptr<EVP_MD_CTX, EVP_MD_CTX_Deleter>;
+
+    EVP_MD_CTX_ptr context(EVP_MD_CTX_new());
+
+    if (!context) {
         result.success = false;
-        result.error_message = "Hash failed";
+        result.error_message = "Failed to create EVP_MD_CTX.";
         return result;
     }
 
-    result.output = base64_encode(digest, 32);
+    if (EVP_DigestInit_ex(context.get(), EVP_sha256(), nullptr) != 1) {
+        result.success = false;
+        result.error_message = "Hash initialization failed.";
+        return result;
+    }
+
+    if (EVP_DigestUpdate(context.get(), input_string.c_str(), input_string.length()) != 1) {
+        result.success = false;
+        result.error_message = "Hash update failed.";
+        return result;
+    }
+
+    unsigned char digest[32];
+    unsigned int digest_len = 0;
+    if (EVP_DigestFinal_ex(context.get(), digest, &digest_len) != 1) {
+        result.success = false;
+        result.error_message = "Hash finalization failed.";
+        return result;
+    }
+
+    result.output = base64_encode(digest, digest_len);
+    result.success = true;
+    return result;
+}
+
+// RLE compression
+ProcessResult Processor::transform(const std::string& input_string) {
+    ProcessResult result;
+    result.processing_ms = 0;
+
+    if (input_string.empty()) {
+        result.success = false;
+        result.error_message = "Input is empty.";
+        return result;
+    }
+
+    std::string output = "";
+    int count = 1;
+
+    for (int i = 1; i <= (int)input_string.size(); i++) {
+        if (i < (int)input_string.size() && input_string[i] == input_string[i-1]) {
+            count++;
+        } else {
+            output += std::to_string(count) + input_string[i-1];
+            count = 1;
+        }
+    }
+
+    result.output = output;
     result.success = true;
     return result;
 }

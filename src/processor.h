@@ -25,6 +25,8 @@ class Processor{
   unsigned char key[32];
   unsigned char iv[16];
 
+  std::string base64_encode(const unsigned char* buffer, size_t length);
+
   // Operation handler to be called by process_request 
   ProcessResult encrypt(const std::string& input_string);
   ProcessResult hash(const std::string& input_string);
