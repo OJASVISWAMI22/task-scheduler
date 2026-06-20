@@ -19,6 +19,8 @@ class Operation(str,Enum):
   ENCRYPT = "Encrypt"
   HASH = "Hash"
   TRANSFORM = "Transform"
+  DECRYPT = "Decrypt"
+  DECOMPRESS = "Decompress"
 
 # Task status
 class TaskStatus(str,Enum):

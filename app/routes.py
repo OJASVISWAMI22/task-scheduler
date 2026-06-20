@@ -1,4 +1,5 @@
 import logging
+import json
 from uuid import UUID,uuid4
 from datetime import datetime, timezone
 
@@ -76,7 +77,13 @@ async def post_request(body : ProcessRequest,
 
   try:
     logger.info("Pushing request id:%s in Redis",request_id)
-    await redis.lpush(queue_name,str(request_id))
+    
+    task_data = json.dumps({
+        "request_id": str(request_id),
+        "payload": body.payload,
+        "operation": body.operation.value
+    })
+    await redis.lpush(queue_name, task_data)
     logger.info("Request : %s successfully pushed into Redis",request_id)
   except Exception as e:
     logger.error("Unable to push request id:%s into redis",request_id)
