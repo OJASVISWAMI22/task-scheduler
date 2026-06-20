@@ -10,7 +10,9 @@
 const std::unordered_map <std::string, int> mapping = {
   {"ENCRYPT", 1},
   {"HASH", 2},
-  {"TRANSFORM", 3}
+  {"TRANSFORM", 3},
+  {"DECRYPT", 4},
+  {"DECOMPRESS", 5}
 };
 
 // Constructor => Copies key and iv 
@@ -43,6 +45,14 @@ ProcessResult Processor::process_request(std::string operation_name,std::string 
     case 3:
         // transform
         result = transform(payload_string);
+        break;
+    case 4:
+        // decryption
+        result = decrypt(payload_string);
+        break;
+    case 5:
+        // decompression
+        result = decompress(payload_string);
         break;
     default:
         result.success = false;
@@ -193,6 +203,100 @@ ProcessResult Processor::transform(const std::string& input_string) {
             output += std::to_string(count) + input_string[i-1];
             count = 1;
         }
+    }
+
+    result.output = output;
+    result.success = true;
+    return result;
+}
+
+ProcessResult Processor::decrypt(const std::string& input_string) {
+    ProcessResult result;
+    result.processing_ms = 0;
+
+    struct EVP_CTX_Deleter {
+        void operator()(EVP_CIPHER_CTX* ctx) { EVP_CIPHER_CTX_free(ctx); }
+    };
+    using EVP_CIPHER_CTX_ptr = std::unique_ptr<EVP_CIPHER_CTX, EVP_CTX_Deleter>;
+
+    // Base64 decode first
+    std::vector<unsigned char> ciphertext(input_string.size());
+    int cipher_len = EVP_DecodeBlock(ciphertext.data(),
+                        reinterpret_cast<const unsigned char*>(input_string.c_str()),
+                        input_string.size());
+    if (cipher_len < 0) {
+        result.success = false;
+        result.error_message = "Base64 decode failed.";
+        return result;
+    }
+
+    // Handle base64 padding
+    if (input_string.size() >= 2 && input_string[input_string.size()-1] == '=') cipher_len--;
+    if (input_string.size() >= 2 && input_string[input_string.size()-2] == '=') cipher_len--;
+
+    EVP_CIPHER_CTX_ptr ctx(EVP_CIPHER_CTX_new());
+    if (!ctx) {
+        result.success = false;
+        result.error_message = "Failed to create EVP_CIPHER_CTX.";
+        return result;
+    }
+
+    if (EVP_DecryptInit_ex(ctx.get(), EVP_aes_256_cbc(), nullptr, key, iv) != 1) {
+        result.success = false;
+        result.error_message = "Decryption initialization failed.";
+        return result;
+    }
+
+    std::vector<unsigned char> plaintext(cipher_len + EVP_CIPHER_CTX_block_size(ctx.get()));
+    int len = 0, plaintext_len = 0;
+
+    if (EVP_DecryptUpdate(ctx.get(), plaintext.data(), &len, ciphertext.data(), cipher_len) != 1) {
+        result.success = false;
+        result.error_message = "Decryption update failed.";
+        return result;
+    }
+    plaintext_len = len;
+
+    if (EVP_DecryptFinal_ex(ctx.get(), plaintext.data() + len, &len) != 1) {
+        result.success = false;
+        result.error_message = "Decryption finalization failed.";
+        return result;
+    }
+    plaintext_len += len;
+
+    result.output = std::string(reinterpret_cast<char*>(plaintext.data()), plaintext_len);
+    result.success = true;
+    return result;
+}
+
+
+ProcessResult Processor::decompress(const std::string& input_string) {
+    ProcessResult result;
+    result.processing_ms = 0;
+
+    if (input_string.empty()) {
+        result.success = false;
+        result.error_message = "Input is empty.";
+        return result;
+    }
+
+    std::string output = "";
+    int i = 0;
+
+    while (i < (int)input_string.size()) {
+        // parse number
+        std::string num_str = "";
+        while (i < (int)input_string.size() && isdigit(input_string[i])) {
+            num_str += input_string[i++];
+        }
+        if (num_str.empty() || i >= (int)input_string.size()) {
+            result.success = false;
+            result.error_message = "Invalid RLE format.";
+            return result;
+        }
+        int count = std::stoi(num_str);
+        char ch = input_string[i++];
+        output += std::string(count, ch);
     }
 
     result.output = output;
