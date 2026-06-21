@@ -48,6 +48,23 @@ services:
       redis:
         condition: service_healthy
 
+  fastapi:
+    build:
+      context: .
+      dockerfile: app/Dockerfile
+    container_name: task_fastapi
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      cpp_service:
+        condition: service_started
+
 volumes:
   postgres_data:
   redis_data:

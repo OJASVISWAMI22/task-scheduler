@@ -20,7 +20,7 @@ Create TABLE requests (
   operation operation_type NOT NULL DEFAULT 'Hash',
   -- Timestamp of the task
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
   -- To Do :- Lock so that 2 task can not be run at same time 
   --locked_until TIMESTAMP WITH TIME ZONE,
   -- Id of worker
