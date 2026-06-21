@@ -1,5 +1,5 @@
 Create TYPE task_status AS ENUM ('pending','done','in_progress','failed');
-Create TYPE operation_type AS ENUM ('Encrypt','Hash','Transform');
+Create TYPE operation_type AS ENUM ('Encrypt','Hash','Transform','Decrypt','Decompress');
 Create TABLE requests (
   -- Generate uuid for each request
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
