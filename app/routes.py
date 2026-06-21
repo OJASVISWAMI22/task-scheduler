@@ -81,7 +81,7 @@ async def post_request(body : ProcessRequest,
     task_data = json.dumps({
         "request_id": str(request_id),
         "payload": body.payload,
-        "operation": body.operation.value
+        "operation": body.operation
     })
     await redis.lpush(queue_name, task_data)
     logger.info("Request : %s successfully pushed into Redis",request_id)
