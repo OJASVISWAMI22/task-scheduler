@@ -47,6 +47,12 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "kill -0 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 15s
 
   fastapi:
     build:
@@ -63,7 +69,7 @@ services:
       redis:
         condition: service_healthy
       cpp_service:
-        condition: service_started
+        condition: service_healthy
 
 volumes:
   postgres_data:

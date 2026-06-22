@@ -3,6 +3,7 @@ import json
 import logging
 
 import httpx
+from redis import exceptions as redis_exceptions
 
 from app.database import get_pool, get_redis_pool
 from app.constants import TaskStatus, QUEUE_HIGH, QUEUE_NORMAL, QUEUE_LOW, CPP_SERVICE_URL
@@ -33,10 +34,10 @@ async def process_task(request_id: str, payload: str, operation: str) -> None:
 
     try:
         logger.info("Calling Cpp service for request id:%s", request_id)
-        async with httpx.AsyncClient() as client:
+        async with httpx.AsyncClient(timeout=30.0) as client:
             response = await client.post(
                 f"{CPP_SERVICE_URL}/process",
-                json={"payload": payload, "operation": operation}
+                json={"payload": payload, "operation": operation.upper()}
             )
         data = response.json()
 
@@ -96,7 +97,10 @@ async def worker() -> None:
             logger.info("Picked up task — request id:%s", task["request_id"])
 
             await process_task(task["request_id"], task["payload"], task["operation"])
-
+        except redis_exceptions.TimeoutError:
+            continue
+        except asyncio.TimeoutError:
+            continue
         except Exception as e:
             logger.error("Worker loop error: %s", e)
 

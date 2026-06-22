@@ -24,7 +24,7 @@ async def get_request_status(request_id:UUID,db = Depends(get_db)):
   """
 
   query = """
-    SELECT r.id, r.status, r.created_at, res.output_data, res.processing_time, res.processed_at
+    SELECT r.id, r.status, r.created_at, res.output_data, res.processing_ms, res.processed_at
     FROM requests r
     LEFT JOIN results res ON res.request_id = r.id
     WHERE r.id = $1
@@ -41,7 +41,7 @@ async def get_request_status(request_id:UUID,db = Depends(get_db)):
   if not postgres:
       raise HTTPException(404, detail="Request not found")
   
-  return StatusResponse(status=postgres["status"], output_data=postgres["output_data"], processing_ms=postgres["processing_time"], created_at=postgres["created_at"], processed_at=postgres["processed_at"])
+  return StatusResponse(status=postgres["status"], output_data=postgres["output_data"], processing_ms=postgres["processing_ms"], created_at=postgres["created_at"], processed_at=postgres["processed_at"])
 
 
 

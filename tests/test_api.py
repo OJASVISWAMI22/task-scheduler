@@ -58,7 +58,7 @@ async def test_get_status_found(app_client, mock_db):
         "status": "done",
         "created_at": datetime.now(timezone.utc),
         "output_data": "encrypted_string",
-        "processing_time": 12,
+        "processing_ms": 12,
         "processed_at": datetime.now(timezone.utc)
     })
     async with app_client as client:

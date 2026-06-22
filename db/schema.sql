@@ -37,7 +37,7 @@ Create TABLE results(
 
   -- Processing time in ms and timestamp
   processed_at TIMESTAMP WITH TIME ZONE,
-  processing_time INTEGER
+  processing_ms INTEGER
 
 );
 

@@ -1,7 +1,9 @@
 # constants.py
 # Constants across app and services are defined here
 from enum import Enum
-
+import os
+from dotenv import load_dotenv
+load_dotenv()
 # Rate limiter
 RATE_LIMIT_MAX_REQUESTS = 10
 RATE_LIMIT_WINDOW_SECONDS = 20
@@ -43,4 +45,5 @@ QUEUE_MAP = {
 }
 # Cpp service url
 
-CPP_SERVICE_URL = "http://localhost:8080"
+CPP_SERVICE_URL = os.getenv("CPP_SERVICE_URL", "http://cpp_service:8080")
+

@@ -56,6 +56,10 @@ int main(){
         res.set_content(response.dump(), "application/json");
     });
 
+    server.Get("/health", [](const httplib::Request&, httplib::Response& res) {
+        res.set_content("ok", "text/plain");
+    });
+
     printf("C++ server running on port 8080\n");
     server.listen("0.0.0.0", 8080);
 
