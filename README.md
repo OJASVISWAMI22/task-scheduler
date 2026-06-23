@@ -32,16 +32,18 @@ flowchart TD
     GS -->|read| PG
 ```
 
-Features:-
-Priority queues – task to queue according to request priority
-Rate limiting – 10 requests/minute per x-user-id header, enforced in middleware using Redis TTL keys
-Async processing — background asyncio worker polls Redis queues (blpop) and dispatches to C++ via HTTP 5 crypto/compression operations — ENCRYPT, DECRYPT (AES-256-CBC), HASH (SHA-256), TRANSFORM / DECOMPRESS (RLE) — all implemented in C++ with OpenSSL
-Status polling — GET /status/{request_id} returns real-time status (PENDING → IN_PROGRESS → DONE / FAILED) with output and processing time
-Fully containerised — single docker compose up --build brings up entire stack (FastAPI, C++, Redis, PostgreSQL)
+## Features
 
+- Priority queues — tasks routed to `queue:high`, `queue:normal`, or `queue:low` based on request priority (3 / 2 / 1)
+- Rate limiting — 10 requests/minute per `x-user-id` header, enforced in middleware via Redis TTL keys
+- Async processing — background asyncio worker polls Redis queues (`blpop`) and dispatches to C++ via HTTP
+- 5 crypto/compression operations — ENCRYPT, DECRYPT (AES-256-CBC), HASH (SHA-256), TRANSFORM / DECOMPRESS (RLE) — all implemented in C++ with OpenSSL
+- Status polling — `GET /status/{request_id}` returns live status (`PENDING → IN_PROGRESS → DONE / FAILED`) with output and processing time
+- Fully containerized — single `docker compose up --build` starts the entire stack
 
 Project Structure:-
 
+```
 TaskScheduler/
 ├── app/                   # FastAPI service
 │   ├── main.py
@@ -70,6 +72,7 @@ TaskScheduler/
 ├── docker-compose.yaml
 ├── .env.example
 └── pytest.ini
+```
 
 
 Getting Started :-
